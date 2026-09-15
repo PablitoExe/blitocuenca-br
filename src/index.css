@@ -1,0 +1,28 @@
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Aoboshi+One&family=Bakbak+One&display=swap");
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Mona Sans";
+  src: url("./assets/fonts/Mona-Sans.woff2") format("woff2-variations");
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
