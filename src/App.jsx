@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import imgLogoToxic from './assets/figma/logo-toxic.png'
 import imgRectangle7 from './assets/figma/rectangle7.png'
 import imgKindpng5818855 from './assets/figma/kindpng-5818855.png'
 import imgNikeShoe1 from './assets/figma/nike-shoe-1.png'
+import imgLvSkate1 from './assets/figma/lv-skate-1.png'
 import imgNikeAf1_1 from './assets/figma/nike-af1-1.png'
 import imgShoe9c00e0c9 from './assets/figma/shoe-9c00e0c9.png'
 import imgNikeAf1_2 from './assets/figma/nike-af1-2.png'
@@ -30,7 +31,7 @@ const HERO_SLIDES = [
     imageWidth: 575.355,
     imageHeight: 344.807,
     imageRotate: '33.71deg',
-    badgeText: 'JORDAN RETRO 4 -',
+    badgeText: 'JORDAN RETRO 4 ・',
     titleLines: ['Air Jordan 4 Retro ', '"White Cement"'],
     description: [
       'Un clásico de 1989 diseñado por Tinker Hatfield. Creadas en cuero blanco con el icónico acabado gris cemento salpicado y cápsula Air visible: pura historia',
@@ -38,17 +39,18 @@ const HERO_SLIDES = [
     ],
   },
   {
-    bigText: 'AIR FORCE',
-    image: imgNikeShoe1,
-    imageAlt: 'Nike Air Force 1 07',
-    imageWidth: 480,
-    imageHeight: 480,
-    imageRotate: '15deg',
-    badgeText: 'AIR FORCE 1 -',
-    titleLines: ['Nike Air Force 1 ', "'07 Triple White"],
+    bigText: 'LV SKATE',
+    image: imgLvSkate1,
+    imageAlt: 'Louis Vuitton LV Skate Negro/Blanco',
+    imageWidth: 560,
+    imageHeight: 541.9,
+    imageRotate: '0deg',
+    imageOffsetX: -70,
+    badgeText: 'LV SKATE ・ LV SKATE ・ ',
+    titleLines: ['Louis Vuitton Skate ', 'Negro / Blanco'],
     description: [
-      'El básico que nunca falla desde 1982. Cuero blanco premium, silueta atemporal y la suela Air visible que',
-      'lo hizo ícono de la cultura urbana en todo el mundo.',
+      'Cuero negro con inserto de malla técnica y la flor LV en blanco como sello distintivo. Suela blanca de',
+      'goma y silueta skate: el lujo urbano de Louis Vuitton en formato sneaker.',
     ],
   },
 ]
@@ -65,6 +67,46 @@ const HERO_HEIGHT = 866
 const HERO_SCALE = 0.8
 const HERO_SHIFT = HERO_HEIGHT * (1 - HERO_SCALE)
 const DESIGN_HEIGHT = 1730 - HERO_SHIFT
+
+function Preloader({ onFinish }) {
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [])
+
+  const handleEnded = () => {
+    setFading(true)
+    window.setTimeout(onFinish, 600)
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(handleEnded, 6000)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div
+      className={`fixed inset-0 z-[9999] flex items-center justify-center bg-black transition-opacity duration-[600ms] ease-out ${
+        fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+    >
+      <video
+        className="h-full w-full object-cover"
+        src={`${import.meta.env.BASE_URL}videos/logo-intro.mp4`}
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleEnded}
+      />
+    </div>
+  )
+}
 
 function NavBar({ searchOpen }) {
   const [active, setActive] = useState(0)
@@ -202,13 +244,74 @@ function Header({ searchOpen, setSearchOpen, query, setQuery }) {
   )
 }
 
+// Calibrated against "JORDAN RETRO 4 ・ " (the reference badge text) so every
+// slide's badge text keeps the same letter size/density instead of being
+// force-stretched to fill the full ring regardless of how long the phrase is.
+const BADGE_CHAR_SPACING = 560 / `JORDAN RETRO 4 ・ `.repeat(2).length
+
+const IMAGE_TRANSITION_MS = 400
+
+function ProductImage({ slide, exiting }) {
+  return (
+    <div
+      className={`absolute inset-0 flex items-center justify-center ${
+        exiting ? 'animate-[product-image-exit_0.4s_ease-in_both]' : 'animate-[product-image-enter_0.4s_ease-out_both]'
+      }`}
+    >
+      <div
+        className="flex-none"
+        style={{ transform: `translateX(${slide.imageOffsetX ?? 0}px) rotate(${slide.imageRotate})` }}
+      >
+        <div className="relative" style={{ height: slide.imageHeight, width: slide.imageWidth }}>
+          <img alt={slide.imageAlt} className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={slide.image} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Hero() {
   const [slideIndex, setSlideIndex] = useState(0)
   const slide = HERO_SLIDES[slideIndex]
+  const [exitingSlide, setExitingSlide] = useState(null)
+  const exitTimer = useRef(null)
+  const [toast, setToast] = useState(null)
+  const toastTimers = useRef([])
+  const [arrowKick, setArrowKick] = useState(null)
+  const arrowKickTimer = useRef(null)
 
-  const goTo = (index) => setSlideIndex((index + HERO_SLIDES.length) % HERO_SLIDES.length)
-  const goPrev = () => goTo(slideIndex - 1)
-  const goNext = () => goTo(slideIndex + 1)
+  const goTo = (index, direction) => {
+    const nextIndex = (index + HERO_SLIDES.length) % HERO_SLIDES.length
+    if (nextIndex === slideIndex) return
+    window.clearTimeout(exitTimer.current)
+    setExitingSlide({ ...HERO_SLIDES[slideIndex], transitionKey: Date.now() })
+    setSlideIndex(nextIndex)
+    exitTimer.current = window.setTimeout(() => setExitingSlide(null), IMAGE_TRANSITION_MS)
+
+    window.clearTimeout(arrowKickTimer.current)
+    setArrowKick({ direction, key: Date.now() })
+    arrowKickTimer.current = window.setTimeout(() => setArrowKick(null), 300)
+  }
+  const goPrev = () => goTo(slideIndex - 1, 'prev')
+  const goNext = () => goTo(slideIndex + 1, 'next')
+
+  useEffect(() => () => window.clearTimeout(arrowKickTimer.current), [])
+
+  useEffect(() => () => window.clearTimeout(exitTimer.current), [])
+
+  const showToast = (text) => {
+    toastTimers.current.forEach(window.clearTimeout)
+    setToast({ text, fading: false })
+    toastTimers.current = [
+      window.setTimeout(() => setToast((current) => (current ? { ...current, fading: true } : current)), 1400),
+      window.setTimeout(() => setToast(null), 1700),
+    ]
+  }
+
+  useEffect(() => () => toastTimers.current.forEach(window.clearTimeout), [])
+
+  const badgeContent = `${slide.badgeText} `.repeat(2)
+  const badgeTextLength = Math.round(badgeContent.length * BADGE_CHAR_SPACING)
 
   return (
     <div
@@ -217,7 +320,7 @@ function Hero() {
     >
       <p
         key={slide.bigText}
-        className="-translate-x-1/2 absolute font-['Audiowide'] leading-[48px] left-1/2 not-italic text-[156px] text-white top-[151px] whitespace-nowrap [word-break:break-word] animate-[fade-in_0.4s_ease-out]"
+        className="-translate-x-1/2 absolute font-['Audiowide'] leading-[48px] left-1/2 not-italic text-[156px] text-white top-[164px] whitespace-nowrap [word-break:break-word] animate-[fade-in_0.4s_ease-out]"
       >
         {slide.bigText}
       </p>
@@ -229,36 +332,32 @@ function Hero() {
         </div>
       </div>
 
-      <div className="absolute flex h-[606.164px] items-center justify-center left-[calc(20%+26px)] top-[239px] w-[669.976px]">
-        <div
-          key={slide.image}
-          className="flex-none animate-[fade-in_0.4s_ease-out]"
-          style={{ transform: `rotate(${slide.imageRotate})` }}
-        >
-          <div className="relative" style={{ height: slide.imageHeight, width: slide.imageWidth }}>
-            <img alt={slide.imageAlt} className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={slide.image} />
-          </div>
-        </div>
+      <div className="absolute h-[606.164px] left-[calc(20%+26px)] top-[239px] w-[669.976px]">
+        {exitingSlide && <ProductImage key={exitingSlide.transitionKey} slide={exitingSlide} exiting />}
+        <ProductImage key={slide.image} slide={slide} />
       </div>
 
-      <div className="absolute h-[165px] left-[calc(20%-11px)] top-[672px] w-[166px]">
+      <div className="absolute h-[220px] left-[calc(20%-38px)] top-[645px] w-[220px]">
         <img alt="" className="absolute block inset-0 max-w-none size-full" src={imgEllipse33} />
-        <svg viewBox="0 0 166 165" className="absolute inset-0 size-full" aria-hidden="true">
-          <path id="badgeTextTop" d="M 14.06,70.35 A 70,70 0 0,1 151.94,70.35" fill="none" />
-          <path id="badgeTextBottom" d="M 14.06,94.65 A 70,70 0 0,0 151.94,94.65" fill="none" />
-          <text fill="white" fontFamily="'Bakbak One', sans-serif" fontSize="14" letterSpacing="0.5">
-            <textPath href="#badgeTextTop" startOffset="0" textLength="195">
-              {slide.badgeText}
-            </textPath>
-          </text>
-          <text fill="white" fontFamily="'Bakbak One', sans-serif" fontSize="14" letterSpacing="0.5">
-            <textPath href="#badgeTextBottom" startOffset="0" textLength="195">
-              {slide.badgeText}
+        <svg
+          key={slide.badgeText}
+          viewBox="0 0 220 220"
+          className="absolute inset-0 size-full animate-[spin-badge_8s_linear_infinite,fade-in_0.4s_ease-out]"
+          aria-hidden="true"
+        >
+          <path
+            id="badgeTextCircle"
+            fill="none"
+            d="M 20,110 A 90,90 0 1,1 200,110 A 90,90 0 1,1 20,110"
+          />
+          <text className="font-['Bakbak_One'] uppercase" fill="white" fontSize="26" letterSpacing="0.5">
+            <textPath href="#badgeTextCircle" startOffset="0" textLength={badgeTextLength}>
+              {badgeContent}
             </textPath>
           </text>
         </svg>
       </div>
-      <div className="absolute h-[48.5px] left-[calc(20%+48px)] top-[730px] w-[48px]">
+      <div className="absolute h-[64px] left-[calc(20%+40px)] top-[723px] w-[64px]">
         <div className="absolute inset-[-2.71%_-2.92%_-2.91%_-2.92%]">
           <img alt="" className="block max-w-none size-full" src={imgVector2} />
         </div>
@@ -266,10 +365,13 @@ function Hero() {
 
       {/* Previous: left circle, arrow flipped to point left */}
       <button
+        key={arrowKick?.direction === 'prev' ? `prev-${arrowKick.key}` : 'prev-idle'}
         type="button"
         aria-label="Producto anterior"
         onClick={goPrev}
-        className="absolute left-[calc(70%+53px)] pointer-events-auto size-[83px] top-[258px] cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95"
+        className={`absolute left-[calc(70%+53px)] pointer-events-auto size-[83px] top-[258px] cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95 ${
+          arrowKick?.direction === 'prev' ? 'animate-[arrow-kick-left_0.3s_ease-out]' : ''
+        }`}
       >
         <img alt="" className="absolute block inset-0 max-w-none pointer-events-none size-full" src={imgEllipse34} />
         <div
@@ -284,10 +386,13 @@ function Hero() {
 
       {/* Next: right circle, arrow pointing right */}
       <button
+        key={arrowKick?.direction === 'next' ? `next-${arrowKick.key}` : 'next-idle'}
         type="button"
         aria-label="Producto siguiente"
         onClick={goNext}
-        className="absolute left-[calc(70%+147px)] pointer-events-auto size-[83px] top-[258px] cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95"
+        className={`absolute left-[calc(70%+147px)] pointer-events-auto size-[83px] top-[258px] cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95 ${
+          arrowKick?.direction === 'next' ? 'animate-[arrow-kick-right_0.3s_ease-out]' : ''
+        }`}
       >
         <img alt="" className="absolute block inset-0 max-w-none pointer-events-none size-full" src={imgEllipse34} />
         <div className="-translate-x-1/2 -translate-y-1/2 absolute aspect-[21.000686645507812/17.500974655151367] left-1/2 top-1/2 w-[40%]">
@@ -295,13 +400,33 @@ function Hero() {
         </div>
       </button>
 
-      <div className="absolute bg-[#34e253] h-[57px] left-[calc(60%+127px)] rounded-[28.5px] top-[639px] w-[147px]" />
-      <p className="[word-break:break-word] absolute font-['Audiowide'] leading-[48px] left-[calc(70%-14px)] not-italic text-[20px] text-white top-[643px] whitespace-nowrap">
-        Comprar
-      </p>
-      <p className="[word-break:break-word] absolute font-['Audiowide'] leading-[48px] left-[calc(60%-10px)] not-italic text-[20px] text-white top-[643px] whitespace-nowrap">
+      {toast && (
+        <div
+          key={toast.text}
+          className={`-translate-x-1/2 absolute left-[calc(60%+60px)] pointer-events-none rounded-[100px] bg-black/80 px-[20px] py-[10px] top-[578px] transition-opacity duration-300 ${
+            toast.fading ? 'opacity-0' : 'opacity-100 animate-[fade-in_0.25s_ease-out]'
+          }`}
+        >
+          <p className="font-['Mona_Sans'] text-[14px] text-white whitespace-nowrap">{toast.text}</p>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => showToast('¡Agregado! Pronto vas a poder finalizar la compra.')}
+        className="absolute bg-[#34e253] flex h-[57px] items-center justify-center left-[calc(60%+127px)] pointer-events-auto rounded-[28.5px] top-[639px] w-[147px] cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95"
+      >
+        <p className="[word-break:break-word] font-['Audiowide'] leading-[48px] not-italic text-[20px] text-white whitespace-nowrap">
+          Comprar
+        </p>
+      </button>
+      <button
+        type="button"
+        onClick={() => showToast('¡Listo! Te vamos a contactar a la brevedad.')}
+        className="absolute font-['Audiowide'] leading-[48px] left-[calc(60%-10px)] not-italic pointer-events-auto text-[20px] text-white top-[643px] whitespace-nowrap cursor-pointer transition-transform duration-150 hover:scale-105 hover:text-[#bff84e] active:scale-95"
+      >
         Consultar
-      </p>
+      </button>
 
       <div
         key={slide.titleLines.join('')}
@@ -457,6 +582,7 @@ function BrandShowcase({ query }) {
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const outerRef = useRef(null)
@@ -472,27 +598,30 @@ export default function App() {
   }, [])
 
   return (
-    <div ref={outerRef} className="w-full overflow-hidden" style={{ height: DESIGN_HEIGHT * scale }}>
-      <div
-        className="relative"
-        style={{
-          width: DESIGN_WIDTH,
-          height: DESIGN_HEIGHT,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          backgroundImage:
-            'linear-gradient(125.53deg, rgb(7, 213, 85) 14.577%, rgb(130, 235, 83) 50.062%, rgb(191, 248, 78) 85.548%)',
-        }}
-      >
-        <Header searchOpen={searchOpen} setSearchOpen={setSearchOpen} query={query} setQuery={setQuery} />
-        <Hero />
-        <div className="absolute inset-0 pointer-events-none" style={{ transform: `translateY(-${HERO_SHIFT}px)` }}>
-          <div className="pointer-events-auto">
-            <BrandShowcase query={query} />
+    <>
+      {loading && <Preloader onFinish={() => setLoading(false)} />}
+      <div ref={outerRef} className="w-full overflow-hidden" style={{ height: DESIGN_HEIGHT * scale }}>
+        <div
+          className="relative"
+          style={{
+            width: DESIGN_WIDTH,
+            height: DESIGN_HEIGHT,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            backgroundImage:
+              'linear-gradient(125.53deg, rgb(7, 213, 85) 14.577%, rgb(130, 235, 83) 50.062%, rgb(191, 248, 78) 85.548%)',
+          }}
+        >
+          <Header searchOpen={searchOpen} setSearchOpen={setSearchOpen} query={query} setQuery={setQuery} />
+          <Hero />
+          <div className="absolute inset-0 pointer-events-none" style={{ transform: `translateY(-${HERO_SHIFT}px)` }}>
+            <div className="pointer-events-auto">
+              <BrandShowcase query={query} />
+            </div>
+            <div className="absolute bg-[#d9d9d9] h-[280px] left-[calc(10%-24px)] pointer-events-auto rounded-[140px] top-[1442px] w-[553px]" />
           </div>
-          <div className="absolute bg-[#d9d9d9] h-[280px] left-[calc(10%-24px)] pointer-events-auto rounded-[140px] top-[1442px] w-[553px]" />
         </div>
       </div>
-    </div>
+    </>
   )
 }
