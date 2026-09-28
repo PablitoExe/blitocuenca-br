@@ -32,3 +32,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# Tipos de Supabase generados a medias (npm run db:types)
+.database.types.tmp

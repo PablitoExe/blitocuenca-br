@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
-    "db:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > src/types/database.ts"
+    "db:types": "if [ -z \"$SUPABASE_PROJECT_ID\" ]; then echo \"Falta SUPABASE_PROJECT_ID (ver .env.example)\"; exit 1; fi; supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" --schema public > .database.types.tmp && mv .database.types.tmp src/types/database.ts && prettier --write src/types/database.ts",
+    "db:types:local": "supabase gen types typescript --local --schema public > .database.types.tmp && mv .database.types.tmp src/types/database.ts && prettier --write src/types/database.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -45,6 +46,7 @@
     "oxlint": "^1.81.0",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "supabase": "^2.118.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vite": "^8.3.0",

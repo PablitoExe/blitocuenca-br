@@ -5,17 +5,26 @@
 React Router 7 (framework mode, SSR), TypeScript, layout responsive, rutas, stores, SEO base,
 arquitectura i18n (es-AR / pt-BR) y modelo de precios multimoneda (ARS / BRL / USD).
 
-## Fase 2 — Backend (próxima)
+## Fase 2 — Backend (en curso)
 
-- [ ] Supabase: proyecto, tablas (`products`, `product_prices`, `categories`, `orders`, `order_items`, `profiles`) y RLS en todas.
-- [ ] Generar tipos con `npm run db:types` y reemplazar `src/services/products.ts` (hoy mock) por consultas a Supabase.
-- [ ] Supabase Storage para imágenes de productos.
+- [x] **2A — Diseño de base de datos: aprobado** ([docs/database/DISEÑO.md](database/DISEÑO.md)).
+  - [x] Migración preparada: `supabase/migrations/0001_esquema_inicial.sql` (17 tablas, RLS en todas).
+        Validada en un Postgres local desechable.
+  - [ ] **Todavía NO aplicada** al proyecto de Supabase (próximo paso: vincular el proyecto, aplicar y
+        generar tipos con `npm run db:types`).
+  - [ ] Datos iniciales: depósitos AR/BR, categorías, marcas y el primer admin.
+- [ ] **2B — Checkout transaccional** (siguiente fase): funciones RPC `create_order`, `confirm_order_payment`,
+      `expire_pending_orders`, `cancel_order`, `refund_order`, `validate_coupon`, `claim_guest_orders`;
+      reservas de stock, job de vencimiento y transiciones de estado (ver DISEÑO.md §11).
+- [ ] **2C — Pagos**: Mercado Pago (AR) y Pix (BR), webhooks en Edge Functions, emails con Resend.
+
+Integración con el frontend (después de aplicar la migración):
+
+- [ ] Instalar `@supabase/supabase-js` y reemplazar `src/services/products.ts` (hoy mock) por consultas a Supabase.
+- [ ] Stock en la tienda con `get_stock_status()` ("En stock" / "Últimas unidades" / "Sin stock" / "Por encargo").
+- [ ] Supabase Storage (bucket `catalog`) para las imágenes de productos.
 - [ ] Supabase Auth: `/login`, `/registro`, rutas privadas (`/mi-cuenta`, `/pedidos`) y rol admin para `/admin`.
 - [ ] Carrito: al hidratar, refrescar nombre/imagen/precio desde Supabase (hoy guarda una copia local).
-- [ ] Checkout: crear la orden y la preferencia de Mercado Pago desde una Edge Function.
-- [ ] Mercado Pago (Argentina) y Pix (Brasil) — cuentas y credenciales separadas por país.
-- [ ] Webhooks de pago en Edge Functions (idempotentes, validando la firma).
-- [ ] Emails transaccionales con Resend desde Edge Functions.
 
 ## Pendientes técnicos
 
