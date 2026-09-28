@@ -1,21 +1,78 @@
-@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=Aoboshi+One&family=Bakbak+One&display=swap");
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @font-face {
-  font-family: "Mona Sans";
-  src: url("./assets/fonts/Mona-Sans.woff2") format("woff2-variations");
+  font-family: 'Mona Sans';
+  src: url('./assets/fonts/Mona-Sans.woff2') format('woff2-variations');
   font-weight: 200 900;
   font-stretch: 75% 125%;
   font-style: normal;
   font-display: swap;
 }
 
+@theme {
+  --font-mona: 'Mona Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-audiowide: 'Audiowide', ui-sans-serif, system-ui, sans-serif;
+  --font-aoboshi: 'Aoboshi One', ui-serif, serif;
+  --font-bakbak: 'Bakbak One', ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #34e253;
+  --color-brand-deep: #07d555;
+  --color-lime: #bff84e;
+  --color-ink: #121212;
+  --color-placeholder: #d9d9d9;
+}
+
 :root {
   color-scheme: light;
+  /*
+   * Unidad de diseño: 1 px del frame original de Figma (1680 px de ancho).
+   * En desktop el hero y el logo se escalan con ella para conservar las proporciones
+   * del diseño; tiene un mínimo para que el texto siga siendo legible y un máximo
+   * para no crecer más que el diseño original en pantallas enormes.
+   */
+  --u: clamp(0.85px, calc(100vw / 1680), 1px);
+  --site-gradient: linear-gradient(
+    125.53deg,
+    rgb(7, 213, 85) 14.577%,
+    rgb(130, 235, 83) 50.062%,
+    rgb(191, 248, 78) 85.548%
+  );
+  --brand-gradient: linear-gradient(
+    131.29deg,
+    rgb(7, 213, 85) 14.577%,
+    rgb(130, 235, 83) 50.062%,
+    rgb(191, 248, 78) 85.548%
+  );
+}
+
+html {
+  /* El degradado del fondo cubre toda la ventana aunque la página sea corta. */
+  min-height: 100%;
 }
 
 body {
   margin: 0;
+  background-color: var(--color-brand-deep);
+  background-image: var(--site-gradient);
+  background-attachment: scroll;
+}
+
+/* Contenedor horizontal del sitio: los márgenes a 1680 px coinciden con el diseño (10% - 28px). */
+@utility site-container {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1680px;
+  padding-inline: 16px;
+
+  @media (width >= 40rem) {
+    padding-inline: 24px;
+  }
+  @media (width >= 64rem) {
+    padding-inline: 32px;
+  }
+  @media (width >= 80rem) {
+    padding-inline: calc(10% - 28px);
+  }
 }
 
 @keyframes fade-in {
@@ -79,5 +136,15 @@ body {
   }
   100% {
     transform: scale(1) translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="46" height="46" viewBox="0 0 46 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group User">
+<g id="Ellipse">
+<circle cx="23" cy="23" r="23" fill="white" fill-opacity="0.2"/>
+<circle cx="23" cy="23" r="22.5" stroke="white" stroke-opacity="0.24"/>
+</g>
+<g id="User">
+<circle cx="23" cy="19" r="4.5" fill="white"/>
+<path id="Vector" d="M13 33.5C13 28.2533 17.4772 24 23 24C28.5228 24 33 28.2533 33 33.5C33 33.7761 32.7761 34 32.5 34H13.5C13.2239 34 13 33.7761 13 33.5Z" fill="white"/>
+</g>
+</g>
+</svg>

@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# React Router / Vercel
+/build
+/.react-router
+/.vercel
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
